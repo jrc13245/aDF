@@ -532,6 +532,7 @@ function aDF.Options:Gui()
 	self:Hide()
 end
 
+-- function to check a unit for a certain debuff and/or number of stacks
 function aDF:GetDebuff(name,buff,stacks)
 	local a=1
 	while UnitDebuff(name,a) do

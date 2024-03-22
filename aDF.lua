@@ -532,8 +532,6 @@ function aDF.Options:Gui()
 	self:Hide()
 end
 
--- function to check a unit for a certain debuff and/or number of stacks
-
 function aDF:GetDebuff(name,buff,stacks)
 	local a=1
 	while UnitDebuff(name,a) do
@@ -541,6 +539,24 @@ function aDF:GetDebuff(name,buff,stacks)
 		aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
 		aDF_tooltip:ClearLines()
 		aDF_tooltip:SetUnitDebuff(name,a)
+		local aDFtext = aDF_tooltipTextL:GetText()
+		if string.find(aDFtext,buff) then 
+			if stacks == 1 then
+				return s
+			else
+				return true 
+			end
+		end
+		a=a+1
+	end
+
+	-- if not found, check buffs in case over the debuff limit
+	a=1
+	while UnitBuff(name,a) do
+		local _, s = UnitBuff(name,a)
+		aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
+		aDF_tooltip:ClearLines()
+		aDF_tooltip:SetUnitBuff(name,a)
 		local aDFtext = aDF_tooltipTextL:GetText()
 		if string.find(aDFtext,buff) then 
 			if stacks == 1 then

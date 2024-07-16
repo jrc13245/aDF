@@ -13,7 +13,7 @@ aDF:RegisterEvent("PLAYER_TARGET_CHANGED")
 aDF:RegisterEvent("UNIT_CASTEVENT")
 aDF:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 aDF:RegisterEvent("CHAT_MSG_SPELL_PARTY_DAMAGE")
-aDF:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE")
+aDF:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE")
 
 function aDF:SendChatMessage(msg,chan)
   if chan and chan ~= "None" and chan ~= "" then
@@ -354,19 +354,18 @@ function aDF:Update()
 		for i,v in pairs(guiOptions) do
 			if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
 				aDF_frames[i]["icon"]:SetAlpha(1)
+				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+				end
 				if i == "Sunder Armor" then
 					local elapsed = 30 - (GetTime() - sundered_at)
 					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
 					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
-					-- aDF_frames[i]["dur"]:SetText(format("%0.1f",elapsed >= 0 and elapsed or 0))
 				end
 				if i == "Armor Shatter" then
 					local elapsed = 45 - (GetTime() - shattered_at)
 					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
-					aDF_frames[i]["dur"]:SetText(format("%0.1f",elapsed >= 0 and elapsed or 0))
-				end
-				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
-					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
 				end
 			else
 				aDF_frames[i]["icon"]:SetAlpha(0.3)
@@ -380,6 +379,7 @@ function aDF:Update()
 		for i,v in pairs(guiOptions) do
 			aDF_frames[i]["icon"]:SetAlpha(0.3)
 			aDF_frames[i]["nr"]:SetText("")
+			aDF_frames[i]["dur"]:SetText("")
 		end
 	end
 end
@@ -579,7 +579,7 @@ end
 function aDF:GetDebuff(name,buff,stacks)
 	local a=1
 	while UnitDebuff(name,a) do
-		local _, s , _, id = UnitDebuff(name,a)
+		local _,s,_,id = UnitDebuff(name,a)
 		local n = SpellInfo(id)
 		-- local _, s = UnitDebuff(name,a)
 		-- aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
@@ -600,7 +600,7 @@ function aDF:GetDebuff(name,buff,stacks)
 	-- if not found, check buffs in case over the debuff limit
 	a=1
 	while UnitBuff(name,a) do
-		local _, s , _, id = UnitBuff(name,a)
+		local _,s,id = UnitBuff(name,a)
 		local n = SpellInfo(id)
 		-- aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
 		-- aDF_tooltip:ClearLines()
@@ -637,18 +637,14 @@ function aDF:OnEvent()
 		-- print("adf update")
 		aDF:Update()
 	elseif event == "UNIT_CASTEVENT" and arg2 == aDF_target then
-		-- print(SpellInfo(arg4))
+	-- elseif event == "UNIT_CASTEVENT" then
+		-- print(SpellInfo(arg4) .. " " .. arg4)
 		local name = SpellInfo(arg4)
 		if name == "Sunder Armor" then
 			sunderers[UnitName(arg1)] = sundered_at
 			local now = GetTime()
 			-- print("since sunder: "..now - sundered_at)
 			sundered_at = now
-		end
-		if name == "Armor Shatter" then
-			local now = GetTime()
-			print("since sunder: "..now - shattered_at)
-			shattered_at = now
 		end
 
 	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then -- self
@@ -660,20 +656,13 @@ function aDF:OnEvent()
 			sunderers[n] = nil
 		end
 
-	elseif event == "CHAT_MSG_SPELL_PARTY_DAMAGE" or event == "CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE" then
+	elseif event == "CHAT_MSG_SPELL_PARTY_DAMAGE" or event == "CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE" then
 		local _,_,n = string.find(arg1,"^(%S+)%s?'s Sunder Armor") -- (was parried) or (missed)
 		if not n then return end
-		-- local _,player_guid = UnitExists("player")
 		if sunderers[n] then
 			sundered_at = sunderers[n]
 			sunderers[n] = nil
 		end
-		print(n)
-
-	-- elseif event == "CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE" then -- not in party, but can be in raid
-		-- Your Sunder Armor is parried by Heroic Training Dummy.
-
-
 
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		aDF_target = nil

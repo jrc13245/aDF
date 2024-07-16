@@ -1,6 +1,8 @@
 --########### armor and Debuff Frame
 --########### By Atreyyo @ Vanillagaming.org
 
+local has_superwow = SetAutoloot and true or false
+
 aDF = CreateFrame('Button', "aDF", UIParent); -- Event Frame
 aDF.Options = CreateFrame("Frame",nil,UIParent) -- Options frame
 
@@ -8,6 +10,16 @@ aDF.Options = CreateFrame("Frame",nil,UIParent) -- Options frame
 aDF:RegisterEvent("ADDON_LOADED")
 aDF:RegisterEvent("UNIT_AURA")
 aDF:RegisterEvent("PLAYER_TARGET_CHANGED")
+aDF:RegisterEvent("UNIT_CASTEVENT")
+aDF:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
+aDF:RegisterEvent("CHAT_MSG_SPELL_PARTY_DAMAGE")
+aDF:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE")
+
+function aDF:SendChatMessage(msg,chan)
+  if chan and chan ~= "None" and chan ~= "" then
+		SendChatMessage(msg,chan)
+	end
+end
 
 -- tables 
 aDF_frames = {} -- we will put all debuff frames in here
@@ -15,11 +27,12 @@ aDF_guiframes = {} -- we wil put all gui frames here
 gui_Options = gui_Options or {} -- checklist options
 gui_Optionsxy = gui_Optionsxy or 1
 gui_chantbl = {
-   "Say",
-   "Yell",
-   "Party",
-   "Raid",
-   "Raid_Warning"
+	"None",
+	"Say",
+	"Yell",
+	"Party",
+	"Raid",
+	"Raid_Warning"
  }
 
 local last_target_change_time = GetTime()
@@ -167,7 +180,7 @@ function aDF:Init()
 		if (arg1 == "RightButton") then
 			if aDF_target ~= nil then
 				if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) then	
-					SendChatMessage(UnitName(aDF_target).." has ".. UnitResistance(aDF_target,0).." armor", gui_chan) 
+					aDF:SendChatMessage(UnitName(aDF_target).." has ".. UnitResistance(aDF_target,0).." armor", gui_chan)
 				end
 			end
 		end
@@ -219,7 +232,7 @@ function aDF:Init()
 				if aDF_target ~= nil then
 					if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) and guiOptions[tdb] ~= nil then
 						if not aDF:GetDebuff(aDF_target,aDFSpells[tdb]) then
-							SendChatMessage("["..tdb.."] is not active on "..UnitName(aDF_target), gui_chan)
+							aDF:SendChatMessage("["..tdb.."] is not active on "..UnitName(aDF_target), gui_chan)
 						else
 							if aDF:GetDebuff(aDF_target,aDFSpells[tdb],1) == 1 then
 								s_ = "stack"
@@ -227,10 +240,10 @@ function aDF:Init()
 								s_ = "stacks"
 							end
 							if aDF:GetDebuff(aDF_target,aDFSpells[tdb],1) >= 1 and aDF:GetDebuff(aDF_target,aDFSpells[tdb],1) < 5 and tdb ~= "Armor Shatter" then
-								SendChatMessage(UnitName(aDF_target).." has "..aDF:GetDebuff(aDF_target,aDFSpells[tdb],1).." ["..tdb.."] "..s_, gui_chan)
+								aDF:SendChatMessage(UnitName(aDF_target).." has "..aDF:GetDebuff(aDF_target,aDFSpells[tdb],1).." ["..tdb.."] "..s_, gui_chan)
 							end
 							if tdb == "Armor Shatter" and aDF:GetDebuff(aDF_target,aDFSpells[tdb],1) >= 1 and aDF:GetDebuff(aDF_target,aDFSpells[tdb],1) < 3 then
-								SendChatMessage(UnitName(aDF_target).." has "..aDF:GetDebuff(aDF_target,aDFSpells[tdb],1).." ["..tdb.."] "..s_, gui_chan)
+								aDF:SendChatMessage(UnitName(aDF_target).." has "..aDF:GetDebuff(aDF_target,aDFSpells[tdb],1).." ["..tdb.."] "..s_, gui_chan)
 							end
 						end
 					end
@@ -251,9 +264,15 @@ function aDF.Create_frame(name)
 	frame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 	frame.icon:SetPoint('TOPLEFT', 1, -1)
 	frame.icon:SetPoint('BOTTOMRIGHT', -1, 1)
+	frame.dur = frame:CreateFontString(nil, "OVERLAY")
+	frame.dur:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+	frame.dur:SetFont("Fonts\\FRIZQT__.TTF", 10+gui_Optionsxy)
+	frame.dur:SetTextColor(255, 255, 0, 1)
+	frame.dur:SetShadowOffset(2,-2)
+	frame.dur:SetText("0")
 	frame.nr = frame:CreateFontString(nil, "OVERLAY")
-	frame.nr:SetPoint("CENTER", frame, "CENTER", 0, 0)
-	frame.nr:SetFont("Fonts\\FRIZQT__.TTF", 16+gui_Optionsxy)
+	frame.nr:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+	frame.nr:SetFont("Fonts\\FRIZQT__.TTF", 9+gui_Optionsxy)
 	frame.nr:SetTextColor(255, 255, 0, 1)
 	frame.nr:SetShadowOffset(2,-2)
 	frame.nr:SetText("1")
@@ -294,9 +313,13 @@ end
 
 -- update function for the text/debuff frames
 
+local sunderers = {}
+local shattered_at = GetTime()
+local sundered_at = GetTime()
+
 function aDF:Update()
 	if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
-		if aDF_target == 'targettarget' and GetTime() < (last_target_change_time + 1.3) then
+		if UnitIsUnit(aDF_target,'targettarget') and GetTime() < (last_target_change_time + 1.3) then
 			-- we won't allow updates for a while to allow targettarget to catch up
 			-- adfprint('target changed too soon, delaying update')
 			return
@@ -313,15 +336,17 @@ function aDF:Update()
 			end
 			local msg = UnitName(aDF_target).."'s armor: "..aDF_armorprev.." -> "..armorcurr..diffreason
 			-- adfprint(msg)
-			if aDF_target == 'target' then
+			if UnitIsUnit(aDF_target,'target') then
 				-- targettarget does not trigger events when it changes. this means it's hard to tell apart units with the same name, so we don't allow notifications for it
-				SendChatMessage(msg, gui_chan)
+				-- ^ TODO: this isn't true with superwow, we can tell anything apart we like, what is the correct behavior?
+				aDF:SendChatMessage(msg, gui_chan)
 			end
 
 		end
 		aDF_armorprev = armorcurr
 
-		if gui_Options["Resistances"] == 1 then
+		-- if gui_Options["Resistances"] == 1 then
+		if true then
 			aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
 		else
 			aDF.res:SetText("")
@@ -329,12 +354,24 @@ function aDF:Update()
 		for i,v in pairs(guiOptions) do
 			if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
 				aDF_frames[i]["icon"]:SetAlpha(1)
+				if i == "Sunder Armor" then
+					local elapsed = 30 - (GetTime() - sundered_at)
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
+					-- aDF_frames[i]["dur"]:SetText(format("%0.1f",elapsed >= 0 and elapsed or 0))
+				end
+				if i == "Armor Shatter" then
+					local elapsed = 45 - (GetTime() - shattered_at)
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+					aDF_frames[i]["dur"]:SetText(format("%0.1f",elapsed >= 0 and elapsed or 0))
+				end
 				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
 					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
 				end
 			else
 				aDF_frames[i]["icon"]:SetAlpha(0.3)
 				aDF_frames[i]["nr"]:SetText("")
+				aDF_frames[i]["dur"]:SetText("")
 			end		
 		end
 	else
@@ -348,7 +385,8 @@ function aDF:Update()
 end
 
 function aDF:UpdateCheck()
-	if utimer == nil or (GetTime() - utimer > 0.8) and UnitIsPlayer("target") then
+	-- if utimer == nil or (GetTime() - utimer > 0.8) and UnitIsPlayer("target") then
+	if utimer == nil or (GetTime() - utimer > 0.3) then
 		utimer = GetTime()
 		aDF:Update()
 	end
@@ -475,14 +513,13 @@ function aDF.Options:Gui()
 	self.Slider:Show()
 	
 	-- checkboxes
-	
 
-	
 	local temptable = {}
 	for tempn,_ in pairs(aDFDebuffs) do
 		table.insert(temptable,tempn)
 	end
 	table.sort(temptable, function(a,b) return a<b end)
+	-- table.insert(temptable,"Resistances")
 	
 	local x,y=130,-80
 	for _,name in pairs(temptable) do
@@ -492,11 +529,10 @@ function aDF.Options:Gui()
 		aDF_guiframes[name] = aDF_guiframes[name] or aDF.Create_guiframe(name)
 		local frame = aDF_guiframes[name]
 		frame:SetPoint("TOPLEFT",x,y)
-
 	end	
-	
+
 	-- drop down menu
-	
+
 	self.dropdown = CreateFrame('Button', 'chandropdown', self, 'UIDropDownMenuTemplate')
 	self.dropdown:SetPoint("BOTTOM",-60,20)
 	InitializeDropdown = function() 
@@ -512,7 +548,7 @@ function aDF.Options:Gui()
 			info.checked = nil
 			UIDropDownMenu_AddButton(info, 1)
 			if gui_chan == nil then
-				UIDropDownMenu_SetSelectedValue(chandropdown, "Say")
+				UIDropDownMenu_SetSelectedValue(chandropdown, "None")
 			else
 				UIDropDownMenu_SetSelectedValue(chandropdown, gui_chan)
 			end
@@ -520,6 +556,11 @@ function aDF.Options:Gui()
 	end
 	UIDropDownMenu_Initialize(chandropdown, InitializeDropdown)
 	
+	-- -- resistance check
+	
+	-- self.resistance = aDF.Create_guiframe("Resistances")
+	-- self.resistance:SetPoint("BOTTOM",60,20)
+
 	-- done button
 	
 	self.dbutton = CreateFrame("Button",nil,self,"UIPanelButtonTemplate")
@@ -536,12 +577,15 @@ end
 function aDF:GetDebuff(name,buff,stacks)
 	local a=1
 	while UnitDebuff(name,a) do
-		local _, s = UnitDebuff(name,a)
-		aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		aDF_tooltip:ClearLines()
-		aDF_tooltip:SetUnitDebuff(name,a)
-		local aDFtext = aDF_tooltipTextL:GetText()
-		if string.find(aDFtext,buff) then 
+		local _, s , _, id = UnitDebuff(name,a)
+		local n = SpellInfo(id)
+		-- local _, s = UnitDebuff(name,a)
+		-- aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
+		-- aDF_tooltip:ClearLines()
+		-- aDF_tooltip:SetUnitDebuff(name,a)
+		-- local aDFtext = aDF_tooltipTextL:GetText()
+		-- if string.find(aDFtext,buff) then 
+		if buff == n then 
 			if stacks == 1 then
 				return s
 			else
@@ -554,12 +598,14 @@ function aDF:GetDebuff(name,buff,stacks)
 	-- if not found, check buffs in case over the debuff limit
 	a=1
 	while UnitBuff(name,a) do
-		local _, s = UnitBuff(name,a)
-		aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		aDF_tooltip:ClearLines()
-		aDF_tooltip:SetUnitBuff(name,a)
-		local aDFtext = aDF_tooltipTextL:GetText()
-		if string.find(aDFtext,buff) then 
+		local _, s , _, id = UnitBuff(name,a)
+		local n = SpellInfo(id)
+		-- aDF_tooltip:SetOwner(UIParent, "ANCHOR_NONE");
+		-- aDF_tooltip:ClearLines()
+		-- aDF_tooltip:SetUnitBuff(name,a)
+		-- local aDFtext = aDF_tooltipTextL:GetText()
+		-- if string.find(aDFtext,buff) then 
+		if buff == n then 
 			if stacks == 1 then
 				return s
 			else
@@ -572,7 +618,6 @@ function aDF:GetDebuff(name,buff,stacks)
 end
 
 -- event function, will load the frames we need
-
 function aDF:OnEvent()
 	if event == "ADDON_LOADED" and arg1 == "aDF" then
 		aDF_Default()
@@ -586,11 +631,49 @@ function aDF:OnEvent()
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf hide|r to hide frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
-	end
-	if event == "UNIT_AURA" then
+  elseif event == "UNIT_AURA" and arg1 == aDF_target then
+		-- print("adf update")
 		aDF:Update()
-	end
-	if event == "PLAYER_TARGET_CHANGED" then
+	elseif event == "UNIT_CASTEVENT" and arg2 == aDF_target then
+		-- print(SpellInfo(arg4))
+		local name = SpellInfo(arg4)
+		if name == "Sunder Armor" then
+			sunderers[UnitName(arg1)] = sundered_at
+			local now = GetTime()
+			-- print("since sunder: "..now - sundered_at)
+			sundered_at = now
+		end
+		if name == "Armor Shatter" then
+			local now = GetTime()
+			print("since sunder: "..now - shattered_at)
+			shattered_at = now
+		end
+
+	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then -- self
+		local sunder_miss = string.find(arg1,"^Your Sunder Armor") -- (was parried/dodges) or (missed)
+		if not sunder_miss then return end
+		local n = UnitName("player")
+		if sunderers[n] then
+			sundered_at = sunderers[n]
+			sunderers[n] = nil
+		end
+
+	elseif event == "CHAT_MSG_SPELL_PARTY_DAMAGE" or event == "CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE" then
+		local _,_,n = string.find(arg1,"^(%S+)%s?'s Sunder Armor") -- (was parried) or (missed)
+		if not n then return end
+		-- local _,player_guid = UnitExists("player")
+		if sunderers[n] then
+			sundered_at = sunderers[n]
+			sunderers[n] = nil
+		end
+		print(n)
+
+	-- elseif event == "CHAT_MSG_SPELL_FRIENDLYPAYER_DAMAGE" then -- not in party, but can be in raid
+		-- Your Sunder Armor is parried by Heroic Training Dummy.
+
+
+
+	elseif event == "PLAYER_TARGET_CHANGED" then
 		aDF_target = nil
 		last_target_change_time = GetTime()
 		if UnitIsPlayer("target") then
@@ -600,6 +683,10 @@ function aDF:OnEvent()
 			aDF_target = "target"
 		end
 		aDF_armorprev = 30000
+		if has_superwow then
+			_,aDF_target = UnitExists(aDF_target)
+		end
+
 		-- adfprint('PLAYER_TARGET_CHANGED ' .. tostring(aDF_target))
 		aDF:Update()
 	end

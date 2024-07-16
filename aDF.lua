@@ -409,13 +409,15 @@ function aDF:Sort()
 	table.sort(aDFTempTable, function(a,b) return a<b end)
 	for n, v in pairs(aDFTempTable) do
 	--DEFAULT_CHAT_FRAME:AddMessage("Name: "..v)
-		if n > 7 then
-			y_=-((24+gui_Optionsxy)*2)
-			x_=(n-1)-7
-			aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*x_,y_)
-		else
-			y_=-(24+gui_Optionsxy)
-			aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*(n-1),y_)
+		if v and aDF_frames[v] then
+			if n > 7 then
+				y_=-((24+gui_Optionsxy)*2)
+				x_=(n-1)-7
+				aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*x_,y_)
+			else
+				y_=-(24+gui_Optionsxy)
+				aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*(n-1),y_)
+			end
 		end
 	end
 end

@@ -316,6 +316,7 @@ end
 local sunderers = {}
 local shattered_at = GetTime()
 local sundered_at = GetTime()
+local anni_stacks_maxed = false
 
 function aDF:Update()
 	if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
@@ -636,6 +637,13 @@ function aDF:OnEvent()
   elseif event == "UNIT_AURA" and arg1 == aDF_target then
 		-- print("adf update")
 		aDF:Update()
+		local anni = tonumber(aDF_frames["Armor Shatter"]["nr"]:GetText()) or 0
+		if anni_stacks_maxed and anni < 3 then anni_stacks_maxed = false end
+		if not anni_stacks_maxed and anni >= 3 then
+			UIErrorsFrame:AddMessage("Annihilator Stacks Maxxed",1,0.1,0.1,1)
+			PlaySoundFile("Sound\\Spells\\YarrrrImpact.wav")
+			anni_stacks_maxed = true
+		end
 	elseif event == "UNIT_CASTEVENT" and arg2 == aDF_target then
 	-- elseif event == "UNIT_CASTEVENT" then
 		-- print(SpellInfo(arg4) .. " " .. arg4)
@@ -665,6 +673,7 @@ function aDF:OnEvent()
 		end
 
 	elseif event == "PLAYER_TARGET_CHANGED" then
+		local aDF_target_old = aDF_target
 		aDF_target = nil
 		last_target_change_time = GetTime()
 		if UnitIsPlayer("target") then
@@ -676,6 +685,9 @@ function aDF:OnEvent()
 		aDF_armorprev = 30000
 		if has_superwow then
 			_,aDF_target = UnitExists(aDF_target)
+		end
+		if aDF_target ~= aDF_target_old then
+			anni_stacks_maxed = false
 		end
 
 		-- adfprint('PLAYER_TARGET_CHANGED ' .. tostring(aDF_target))

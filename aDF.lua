@@ -365,6 +365,10 @@ function aDF:Update()
 				end
 				if i == "Armor Shatter" then
 					local elapsed = 45 - (GetTime() - shattered_at)
+					-- can't know anni duration once stacks are maxxed, bump it if it's still up?
+					if elapsed < 0 then
+						shattered_at = shattered_at + 20
+					end
 					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
 					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
 				end
@@ -636,8 +640,10 @@ function aDF:OnEvent()
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
   elseif event == "UNIT_AURA" and arg1 == aDF_target then
 		-- print("adf update")
+		local anni_prev = tonumber(aDF_frames["Armor Shatter"]["nr"]:GetText()) or 0
 		aDF:Update()
 		local anni = tonumber(aDF_frames["Armor Shatter"]["nr"]:GetText()) or 0
+		if anni_prev ~= anni then shattered_at = GetTime() end
 		if anni_stacks_maxed and anni < 3 then anni_stacks_maxed = false end
 		if not anni_stacks_maxed and anni >= 3 then
 			UIErrorsFrame:AddMessage("Annihilator Stacks Maxxed",1,0.1,0.1,1)

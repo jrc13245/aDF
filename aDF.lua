@@ -16,7 +16,7 @@ aDF:RegisterEvent("CHAT_MSG_SPELL_PARTY_DAMAGE")
 aDF:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE")
 
 function aDF:SendChatMessage(msg,chan)
- if chan and chan ~= "None" and chan ~= "" then
+  if chan and chan ~= "None" and chan ~= "" then
 		SendChatMessage(msg,chan)
 	end
 end
@@ -81,60 +81,57 @@ aDFDebuffs = {
 	--["Elemental Vulnerability"] = "Interface\\Icons\\Spell_Holy_Dizzy",
 
 aDFArmorVals = {
-	[90]  = "Sunder Armor x1", -- r1 x1
-	[180] = "Sunder Armor",  -- r2 x1, or r1 x2
-	[270] = "Sunder Armor",  -- r3 x1, or r1 x3
-	[540] = "Sunder Armor",  -- r3 x2, or r2 x3
-	[810] = "Sunder Armor x3", -- r3 x3
-	[360] = "Sunder Armor",  -- r4 x1, or r1 x4 or r2 x2
-	[720] = "Sunder Armor",  -- r4 x2, or r2 x4
-	[1080] = "Sunder Armor",  -- r4 x3, or r3 x4
+	[90]   = "Sunder Armor x1", -- r1 x1
+	[180]  = "Sunder Armor",    -- r2 x1, or r1 x2
+	[270]  = "Sunder Armor",    -- r3 x1, or r1 x3
+	[540]  = "Sunder Armor",    -- r3 x2, or r2 x3
+	[810]  = "Sunder Armor x3", -- r3 x3
+	[360]  = "Sunder Armor",    -- r4 x1, or r1 x4 or r2 x2
+	[720]  = "Sunder Armor",    -- r4 x2, or r2 x4
+	[1080] = "Sunder Armor",    -- r4 x3, or r3 x4
 	[1440] = "Sunder Armor x4", -- r4 x4
-	[450] = "Sunder Armor",  -- r5 x1, or r1 x5
-	[900] = "Sunder Armor",  -- r5 x2, or r2 x5
-	[1350] = "Sunder Armor",  -- r5 x3, or r3 x5
-	[1800] = "Sunder Armor",  -- r5 x4, or r4 x5
+	[450]  = "Sunder Armor",    -- r5 x1, or r1 x5
+	[900]  = "Sunder Armor",    -- r5 x2, or r2 x5
+	[1350] = "Sunder Armor",    -- r5 x3, or r3 x5
+	[1800] = "Sunder Armor",    -- r5 x4, or r4 x5
 	[2250] = "Sunder Armor x5", -- r5 x5
---[600] = "Improved Expose Armor",  -- r1 -- conflicts with anni/rivenspike
---[400] = "Untalented Expose Armor", -- r1 -- conflicts with anni/rivenspike
--- 	[] = "Improved Expose Armor", -- 5pt IEA r2 r3 r4 values unknown
-	[725] = "Untalented Expose Armor",
+--[600]  = "Improved Expose Armor",   -- r1 -- conflicts with anni/rivenspike
+--[400]  = "Untalented Expose Armor", -- r1 -- conflicts with anni/rivenspike
+-- 	[] = "Improved Expose Armor",  -- 5pt IEA r2 r3 r4 values unknown
+	[725]  = "Untalented Expose Armor",
 -- 	[] = "Improved Expose Armor",
 	[1050] = "Untalented Expose Armor",
 -- 	[] = "Improved Expose Armor",
 	[1375] = "Untalented Expose Armor",
-	[510] = "Fucked up IEA?",
+	[510]  = "Fucked up IEA?",
 	[1020] = "Fucked up IEA?",
 	[1530] = "Fucked up IEA?",
 	[2040] = "Fucked up IEA?",
 	[2550] = "Improved Expose Armor",
 	[1700] = "Untalented Expose Armor",
-	[505] = "Faerie Fire",
-	[395] = "Faerie Fire R3",
-	[285] = "Faerie Fire R2",
-	[175] = "Faerie Fire R1",
-	[640] = "Curse of Recklessness",
-	[465] = "Curse of Recklessness R3",
-	[290] = "Curse of Recklessness R2",
-	[140] = "Curse of Recklessness R1",
-	[600] = "Annihilator x3 ?", --
-	[400] = "Annihilator x2 ?", -- Armor Shatter spell=16928, or Puncture Armor r2 spell=17315
-	[200] = "Annihilator x1 ?", --
-	[50]  = "Torch of Holy Flame", -- Can also be spell=13526, item=1434 but those conflict FF
-	[100] = "Weapon Proc Faerie Fire", -- non-stacking proc spell=13752, Puncture Armor r1 x1 spell=11791
-	[300] = "Weapon Proc Faerie Fire", -- Dark Iron Sunderer item=11607, Puncture Armor r1 x3
+	[505]  = "Faerie Fire",
+	[395]  = "Faerie Fire R3",
+	[285]  = "Faerie Fire R2",
+	[175]  = "Faerie Fire R1",
+	[640]  = "Curse of Recklessness",
+	[465]  = "Curse of Recklessness R3",
+	[290]  = "Curse of Recklessness R2",
+	[140]  = "Curse of Recklessness R1",
+	[600]  = "Annihilator x3 ?", --
+	[400]  = "Annihilator x2 ?", -- Armor Shatter spell=16928, or Puncture Armor r2 spell=17315
+	[200]  = "Annihilator x1 ?", --
+	[50]   = "Torch of Holy Flame", -- Can also be spell=13526, item=1434 but those conflict FF
+	[100]  = "Weapon Proc Faerie Fire", -- non-stacking proc spell=13752, Puncture Armor r1 x1 spell=11791
+	[300]  = "Weapon Proc Faerie Fire", -- Dark Iron Sunderer item=11607, Puncture Armor r1 x3
 }
 
 function aDF_Default()
-	if gui_Options == nil then
-		gui_Options = {}
-	end
-  if gui_Options["ShowResistances"] == nil then
-    gui_Options["ShowResistances"] = 1
-  end
-	for k,v in pairs(aDFDebuffs) do
-		if gui_Options[k] == nil then
-			gui_Options[k] = 1
+	if guiOptions == nil then
+		guiOptions = {}
+		for k,v in pairs(aDFDebuffs) do
+			if guiOptions[k] == nil then
+				guiOptions[k] = 1
+			end
 		end
 	end
 end
@@ -193,17 +190,17 @@ function aDF:Init()
 	
 	-- Armor text
 	self.armor = self:CreateFontString(nil, "OVERLAY")
-  self.armor:SetPoint("CENTER", self, "CENTER", 0, 0)
-  self.armor:SetFont("Fonts\\FRIZQT__.TTF", 24+gui_Optionsxy)
+    self.armor:SetPoint("CENTER", self, "CENTER", 0, 0)
+    self.armor:SetFont("Fonts\\FRIZQT__.TTF", 24+gui_Optionsxy)
 	self.armor:SetShadowOffset(2,-2)
-  self.armor:SetText("aDF")
+    self.armor:SetText("aDF")
 
 	-- Resistance text
 	self.res = self:CreateFontString(nil, "OVERLAY")
-  self.res:SetPoint("CENTER", self, "CENTER", 0, 20+gui_Optionsxy)
-  self.res:SetFont("Fonts\\FRIZQT__.TTF", 14+gui_Optionsxy)
+    self.res:SetPoint("CENTER", self, "CENTER", 0, 20+gui_Optionsxy)
+    self.res:SetFont("Fonts\\FRIZQT__.TTF", 14+gui_Optionsxy)
 	self.res:SetShadowOffset(2,-2)
-  self.res:SetText("Resistance")
+    self.res:SetText("Resistance")
 	
 	-- for the debuff check function
 	aDF_tooltip = CreateFrame("GAMETOOLTIP", "buffScan")
@@ -214,7 +211,7 @@ function aDF:Init()
 	--R = tip:CreateFontString()
 	--
 	
-	f_ = 0
+	f_ =  0
 	for name,texture in pairs(aDFDebuffs) do
 		aDFsize = 24+gui_Optionsxy
 		aDF_frames[name] = aDF_frames[name] or aDF.Create_frame(name)
@@ -235,7 +232,7 @@ function aDF:Init()
 			if (arg1 == "RightButton") then
 				tdb=this:GetName()
 				if aDF_target ~= nil then
-					if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) and gui_Options[tdb] ~= nil then
+					if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) and guiOptions[tdb] ~= nil then
 						if not aDF:GetDebuff(aDF_target,aDFSpells[tdb]) then
 							aDF:SendChatMessage("["..tdb.."] is not active on "..UnitName(aDF_target), gui_chan)
 						else
@@ -292,10 +289,10 @@ function aDF.Create_guiframe(name)
 	frame:SetFrameStrata("LOW")
 	frame:SetScript("OnClick", function () 
 		if frame:GetChecked() == nil then 
-			gui_Options[name] = nil
+			guiOptions[name] = nil
 		elseif frame:GetChecked() == 1 then 
-			gui_Options[name] = 1 
-			table.sort(gui_Options)
+			guiOptions[name] = 1 
+			table.sort(guiOptions)
 		end
 		aDF:Sort()
 		aDF:Update()
@@ -306,7 +303,7 @@ function aDF.Create_guiframe(name)
 		GameTooltip:Show()
 	end)
 	frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	frame:SetChecked(gui_Options[name])
+	frame:SetChecked(guiOptions[name])
 	frame.Icon = frame:CreateTexture(nil, 'ARTWORK')
 	frame.Icon:SetTexture(aDFDebuffs[name])
 	frame.Icon:SetWidth(25)
@@ -324,72 +321,74 @@ local sundered_at = GetTime()
 local anni_stacks_maxed = false
 
 function aDF:Update()
-  if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
-    if UnitIsUnit(aDF_target,'targettarget') and GetTime() < (last_target_change_time + 1.3) then
-    end
-    local armorcurr = UnitResistance(aDF_target,0)
-    aDF.armor:SetText(armorcurr)
+	if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
+		if UnitIsUnit(aDF_target,'targettarget') and GetTime() < (last_target_change_time + 1.3) then
+			-- we won't allow updates for a while to allow targettarget to catch up
+			-- adfprint('target changed too soon, delaying update')
+			return
+		end
+		local armorcurr = UnitResistance(aDF_target,0)
+--		aDF.armor:SetText(UnitResistance(aDF_target,0).." ["..math.floor(((UnitResistance(aDF_target,0) / (467.5 * UnitLevel("player") + UnitResistance(aDF_target,0) - 22167.5)) * 100),1).."%]")
+		aDF.armor:SetText(armorcurr)
+		-- adfprint(string.format('aDF_target %s targetname %s armorcurr %s armorprev %s', aDF_target, UnitName(aDF_target), armorcurr, aDF_armorprev))
+		if armorcurr > aDF_armorprev then
+			local armordiff = armorcurr - aDF_armorprev
+			local diffreason = ""
+			if aDF_armorprev ~= 0 and aDFArmorVals[armordiff] then
+				diffreason = " (Dropped " .. aDFArmorVals[armordiff] .. ")"
+			end
+			local msg = UnitName(aDF_target).."'s armor: "..aDF_armorprev.." -> "..armorcurr..diffreason
+			-- adfprint(msg)
+			if UnitIsUnit(aDF_target,'target') then
+				-- targettarget does not trigger events when it changes. this means it's hard to tell apart units with the same name, so we don't allow notifications for it
+				-- ^ TODO: this isn't true with superwow, we can tell anything apart we like, what is the correct behavior?
+				aDF:SendChatMessage(msg, gui_chan)
+			end
 
-    if armorcurr > aDF_armorprev then
-      local armordiff = armorcurr - aDF_armorprev
-      local diffreason = ""
-      if aDF_armorprev ~= 0 and aDFArmorVals[armordiff] then
-        diffreason = " (Dropped " .. aDFArmorVals[armordiff] .. ")"
-      end
-      local msg = UnitName(aDF_target).."'s armor: "..aDF_armorprev.." -> "..armorcurr..diffreason
-      if UnitIsUnit(aDF_target,'target') then
-        aDF:SendChatMessage(msg, gui_chan)
-      end
-    end
-    aDF_armorprev = armorcurr
+		end
+		aDF_armorprev = armorcurr
 
-    if gui_Options["ShowResistances"] == 1 then
-      aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
-    else
-      aDF.res:SetText("")
-    end
-
-    for i,v in pairs(gui_Options) do
-
-      if aDF_frames[i] and aDFSpells[i] then
-        if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
-          aDF_frames[i]["icon"]:SetAlpha(1)
-          local stacks = aDF:GetDebuff(aDF_target,aDFSpells[i],1)
-          if stacks and stacks > 1 then
-            aDF_frames[i]["nr"]:SetText(stacks)
-          else
-             aDF_frames[i]["nr"]:SetText("")
-          end
-
-          if i == "Sunder Armor" then
-            local elapsed = 30 - (GetTime() - sundered_at)
-            aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
-          elseif i == "Armor Shatter" then
-            local elapsed = 45 - (GetTime() - shattered_at)
-
-            aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
-
-          elseif aDF_frames[i]["dur"] then
-             aDF_frames[i]["dur"]:SetText("")
-          end
-        else
-          aDF_frames[i]["icon"]:SetAlpha(0.3)
-          aDF_frames[i]["nr"]:SetText("")
-          aDF_frames[i]["dur"]:SetText("")
-        end
-      end
-    end
-  else
-    aDF.armor:SetText("")
-    aDF.res:SetText("")
-    for i,v in pairs(gui_Options) do
-      if aDF_frames[i] then
-        aDF_frames[i]["icon"]:SetAlpha(0.3)
-        aDF_frames[i]["nr"]:SetText("")
-        aDF_frames[i]["dur"]:SetText("")
-      end
-    end
-  end
+		-- if gui_Options["Resistances"] == 1 then
+		if true then
+			aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
+		else
+			aDF.res:SetText("")
+		end
+		for i,v in pairs(guiOptions) do
+			if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
+				aDF_frames[i]["icon"]:SetAlpha(1)
+				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+				end
+				if i == "Sunder Armor" then
+					local elapsed = 30 - (GetTime() - sundered_at)
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
+				end
+				if i == "Armor Shatter" then
+					local elapsed = 45 - (GetTime() - shattered_at)
+					-- can't know anni duration once stacks are maxxed, bump it if it's still up?
+					if elapsed < 0 then
+						shattered_at = shattered_at + 20
+					end
+					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
+					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
+				end
+			else
+				aDF_frames[i]["icon"]:SetAlpha(0.3)
+				aDF_frames[i]["nr"]:SetText("")
+				aDF_frames[i]["dur"]:SetText("")
+			end		
+		end
+	else
+		aDF.armor:SetText("")
+		aDF.res:SetText("")
+		for i,v in pairs(guiOptions) do
+			aDF_frames[i]["icon"]:SetAlpha(0.3)
+			aDF_frames[i]["nr"]:SetText("")
+			aDF_frames[i]["dur"]:SetText("")
+		end
+	end
 end
 
 function aDF:UpdateCheck()
@@ -404,14 +403,14 @@ end
 
 function aDF:Sort()
 	for name,_ in pairs(aDFDebuffs) do
-		if gui_Options[name] == nil then
+		if guiOptions[name] == nil then
 			aDF_frames[name]:Hide()
 		else
 			aDF_frames[name]:Show()
 		end
 	end
 	local aDFTempTable = {}
-	for dbf,_ in pairs(gui_Options) do
+	for dbf,_ in pairs(guiOptions) do
 		table.insert(aDFTempTable,dbf)
 	end
 	table.sort(aDFTempTable, function(a,b) return a<b end)
@@ -472,11 +471,11 @@ function aDF.Options:Gui()
 	-- Options text
 	
 	self.text = self:CreateFontString(nil, "OVERLAY")
-  self.text:SetPoint("CENTER", self, "CENTER", 0, 180)
-  self.text:SetFont("Fonts\\FRIZQT__.TTF", 25)
+    self.text:SetPoint("CENTER", self, "CENTER", 0, 180)
+    self.text:SetFont("Fonts\\FRIZQT__.TTF", 25)
 	self.text:SetTextColor(255, 255, 0, 1)
 	self.text:SetShadowOffset(2,-2)
-  self.text:SetText("Options")
+    self.text:SetText("Options")
 	
 	-- mid line
 	
@@ -541,50 +540,10 @@ function aDF.Options:Gui()
 		frame:SetPoint("TOPLEFT",x,y)
 	end	
 
-    local resCheck = CreateFrame("CheckButton", "aDFShowResistancesCheckButton", self, "UICheckButtonTemplate")
-    -- Position the checkbox square itself
-    resCheck:SetPoint("TOPLEFT", self, "TOPLEFT", 20, -40)
-    -- Adjust hit rectangle if needed (often template handles this reasonably)
-    -- resCheck:SetHitRectInsets(0, -100, 0, 0) -- May not be needed now text is separate
-
-    -- ** Create our own text label **
-    -- We ignore the template's built-in text label.
-    resCheck.labelText = resCheck:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall") -- Or GameFontNormal
-    resCheck.labelText:SetPoint("LEFT", resCheck, "RIGHT", 5, 1) -- Anchor text LEFT to checkbox RIGHT edge
-    resCheck.labelText:SetText("Show Resistances") -- Set text on our label
-
-    -- Set initial checked state from saved options
-    resCheck:SetChecked(gui_Options["ShowResistances"] == 1)
-
-    resCheck:SetScript("OnClick", function ()
-        PlaySound("igMainMenuOptionCheckBoxOn");
-        if resCheck:GetChecked() then
-            gui_Options["ShowResistances"] = 1
-
-        else
-            gui_Options["ShowResistances"] = nil
-
-        end
-
-        aDF:Update()
-    end)
-
-    resCheck:SetScript("OnEnter", function()
-        GameTooltip:SetOwner(resCheck.labelText or resCheck, "ANCHOR_RIGHT");
-        GameTooltip:SetText("Toggle visibility of the resistance text (FR, NR, FrR, SR).", 1, 1, 1, 1, 1);
-        GameTooltip:Show()
-    end)
-
-    resCheck:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-
-    resCheck:Show()
-
 	-- drop down menu
 
 	self.dropdown = CreateFrame('Button', 'chandropdown', self, 'UIDropDownMenuTemplate')
-	self.dropdown:SetPoint("BOTTOM", self, "BOTTOM",-60,20)
+	self.dropdown:SetPoint("BOTTOM",-60,20)
 	InitializeDropdown = function() 
 		local info = {}
 		for k,v in pairs(gui_chantbl) do
@@ -605,7 +564,6 @@ function aDF.Options:Gui()
 		end
 	end
 	UIDropDownMenu_Initialize(chandropdown, InitializeDropdown)
-	self.dropdown:Show()
 	
 	-- -- resistance check
 	
@@ -682,7 +640,7 @@ function aDF:OnEvent()
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf hide|r to hide frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
- elseif event == "UNIT_AURA" and arg1 == aDF_target then
+  elseif event == "UNIT_AURA" and arg1 == aDF_target then
 		-- print("adf update")
 		local anni_prev = tonumber(aDF_frames["Armor Shatter"]["nr"]:GetText()) or 0
 		aDF:Update()

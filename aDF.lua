@@ -2,7 +2,6 @@
 --########### By Atreyyo @ Vanillagaming.org
 
 local has_superwow = SetAutoloot and true or false
-
 aDF = CreateFrame('Button', "aDF", UIParent); -- Event Frame
 aDF.Options = CreateFrame("Frame",nil,UIParent) -- Options frame
 
@@ -126,14 +125,15 @@ aDFArmorVals = {
 }
 
 function aDF_Default()
-	if guiOptions == nil then
-		guiOptions = {}
-		for k,v in pairs(aDFDebuffs) do
-			if guiOptions[k] == nil then
-				guiOptions[k] = 1
-			end
-		end
-	end
+    gui_Options = gui_Options or {}
+    for k,v in pairs(aDFDebuffs) do
+        if gui_Options[k] == nil then
+            gui_Options[k] = 1
+        end
+    end
+     if gui_Options.show_resistances == nil then 
+         gui_Options.show_resistances = true
+     end
 end
 
 -- the main frame
@@ -232,7 +232,7 @@ function aDF:Init()
 			if (arg1 == "RightButton") then
 				tdb=this:GetName()
 				if aDF_target ~= nil then
-					if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) and guiOptions[tdb] ~= nil then
+					if UnitAffectingCombat(aDF_target) and UnitCanAttack("player", aDF_target) and gui_Options[tdb] ~= nil then
 						if not aDF:GetDebuff(aDF_target,aDFSpells[tdb]) then
 							aDF:SendChatMessage("["..tdb.."] is not active on "..UnitName(aDF_target), gui_chan)
 						else
@@ -289,10 +289,9 @@ function aDF.Create_guiframe(name)
 	frame:SetFrameStrata("LOW")
 	frame:SetScript("OnClick", function () 
 		if frame:GetChecked() == nil then 
-			guiOptions[name] = nil
+			gui_Options[name] = nil
 		elseif frame:GetChecked() == 1 then 
-			guiOptions[name] = 1 
-			table.sort(guiOptions)
+			gui_Options[name] = 1
 		end
 		aDF:Sort()
 		aDF:Update()
@@ -303,7 +302,7 @@ function aDF.Create_guiframe(name)
 		GameTooltip:Show()
 	end)
 	frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	frame:SetChecked(guiOptions[name])
+	frame:SetChecked(gui_Options[name])
 	frame.Icon = frame:CreateTexture(nil, 'ARTWORK')
 	frame.Icon:SetTexture(aDFDebuffs[name])
 	frame.Icon:SetWidth(25)
@@ -349,12 +348,13 @@ function aDF:Update()
 		aDF_armorprev = armorcurr
 
 		-- if gui_Options["Resistances"] == 1 then
-		if true then
+		-- if true then
+		if gui_Options.show_resistances then 
 			aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
 		else
 			aDF.res:SetText("")
 		end
-		for i,v in pairs(guiOptions) do
+		for i,v in pairs(gui_Options) do
 			if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
 				aDF_frames[i]["icon"]:SetAlpha(1)
 				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
@@ -375,18 +375,22 @@ function aDF:Update()
 					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
 				end
 			else
-				aDF_frames[i]["icon"]:SetAlpha(0.3)
-				aDF_frames[i]["nr"]:SetText("")
-				aDF_frames[i]["dur"]:SetText("")
+				if aDF_frames[i] then
+					aDF_frames[i]["icon"]:SetAlpha(0.3)
+					aDF_frames[i]["nr"]:SetText("")
+					aDF_frames[i]["dur"]:SetText("")
+				end
 			end		
 		end
 	else
 		aDF.armor:SetText("")
 		aDF.res:SetText("")
-		for i,v in pairs(guiOptions) do
-			aDF_frames[i]["icon"]:SetAlpha(0.3)
-			aDF_frames[i]["nr"]:SetText("")
-			aDF_frames[i]["dur"]:SetText("")
+		for i,v in pairs(gui_Options) do
+			if aDF_frames[i] then
+				aDF_frames[i]["icon"]:SetAlpha(0.3)
+				aDF_frames[i]["nr"]:SetText("")
+				aDF_frames[i]["dur"]:SetText("")
+			end
 		end
 	end
 end
@@ -403,14 +407,14 @@ end
 
 function aDF:Sort()
 	for name,_ in pairs(aDFDebuffs) do
-		if guiOptions[name] == nil then
+		if gui_Options[name] == nil then
 			aDF_frames[name]:Hide()
 		else
 			aDF_frames[name]:Show()
 		end
 	end
 	local aDFTempTable = {}
-	for dbf,_ in pairs(guiOptions) do
+	for dbf,_ in pairs(gui_Options) do
 		table.insert(aDFTempTable,dbf)
 	end
 	table.sort(aDFTempTable, function(a,b) return a<b end)
@@ -630,6 +634,11 @@ end
 function aDF:OnEvent()
 	if event == "ADDON_LOADED" and arg1 == "aDF" then
 		aDF_Default()
+
+		if gui_Options.showResistances == nil then 
+			gui_Options.showResistances = true -- Default to ON
+		end
+
 		aDF_target = nil
 		aDF_armorprev = 30000
 		if gui_chan == nil then gui_chan = Say end
@@ -640,6 +649,7 @@ function aDF:OnEvent()
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf hide|r to hide frame",1,1,1)
 		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
+		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf resist on|r or |cFFFFFF00 /adf resist off|r to toggle resistance display",1,1,1)
   elseif event == "UNIT_AURA" and arg1 == aDF_target then
 		-- print("adf update")
 		local anni_prev = tonumber(aDF_frames["Armor Shatter"]["nr"]:GetText()) or 0
@@ -710,23 +720,39 @@ aDF:SetScript("OnUpdate", aDF.UpdateCheck)
 
 -- slash commands
 
-function aDF.slash(arg1,arg2,arg3)
-	if arg1 == nil or arg1 == "" then
-		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
-		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf hide|r to hide frame",1,1,1)
-		DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
-		else
-		if arg1 == "show" then
-			aDF:Show()
-		elseif arg1 == "hide" then
-			aDF:Hide()
-		elseif arg1 == "options" then
-			aDF.Options:Show()
-		else
-			DEFAULT_CHAT_FRAME:AddMessage(arg1)
-			DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r unknown command",1,0.3,0.3);
-		end
-	end
+function aDF.slash(input)
+    local trimmed_input = input and string.match(input, "^%s*(.-)%s*$") or ""
+    local cmd, value = string.match(trimmed_input, "^(%S+)%s*(%S*)%s*$")
+    cmd = cmd or "" 
+    local lower_cmd = string.lower(cmd)
+
+    if lower_cmd == "" then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf hide|r to hide frame",1,1,1)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf options|r for options frame",1,1,1)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf resist on|r or |cFFFFFF00 /adf resist off|r to toggle resistance display",1,1,1)
+    elseif lower_cmd == "show" then
+        aDF:Show()
+    elseif lower_cmd == "hide" then
+        aDF:Hide()
+    elseif lower_cmd == "options" then
+        aDF.Options:Show()
+    elseif lower_cmd == "resist" then
+        local lower_value = string.lower(tostring(value))
+        if lower_value =="on" then
+            gui_Options.show_resistances = true
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r Resistances |cFF00FF00ON",1,1,1)
+            aDF:Update()
+        elseif lower_value == "off" then
+            gui_Options.show_resistances = false
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r Resistances |cFFFF0000OFF",1,1,1)
+            aDF:Update()
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r Usage: /adf resist [on|off]",1,0.3,0.3);
+        end
+    else
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r unknown command: " .. cmd,1,0.3,0.3);
+    end
 end
 
 SlashCmdList['ADF_SLASH'] = aDF.slash

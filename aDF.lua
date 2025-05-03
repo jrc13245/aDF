@@ -125,15 +125,11 @@ aDFArmorVals = {
 }
 
 function aDF_Default()
-    gui_Options = gui_Options or {}
     for k,v in pairs(aDFDebuffs) do
         if gui_Options[k] == nil then
             gui_Options[k] = 1
         end
     end
-     if gui_Options.show_resistances == nil then 
-         gui_Options.show_resistances = true
-     end
 end
 
 -- the main frame
@@ -285,31 +281,32 @@ end
 -- creates gui checkboxes
 
 function aDF.Create_guiframe(name)
-	local frame = CreateFrame("CheckButton", name, aDF.Options, "UICheckButtonTemplate")
-	frame:SetFrameStrata("LOW")
-	frame:SetScript("OnClick", function () 
-		if frame:GetChecked() == nil then 
-			gui_Options[name] = nil
-		elseif frame:GetChecked() == 1 then 
-			gui_Options[name] = 1
-		end
-		aDF:Sort()
-		aDF:Update()
-		end)
-	frame:SetScript("OnEnter", function() 
-		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
-		GameTooltip:SetText(name, 255, 255, 0, 1, 1);
-		GameTooltip:Show()
-	end)
-	frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	frame:SetChecked(gui_Options[name])
-	frame.Icon = frame:CreateTexture(nil, 'ARTWORK')
-	frame.Icon:SetTexture(aDFDebuffs[name])
-	frame.Icon:SetWidth(25)
-	frame.Icon:SetHeight(25)
-	frame.Icon:SetPoint("CENTER",-30,0)
-	--DEFAULT_CHAT_FRAME:AddMessage("----- Adding new gui checkbox")
-	return frame
+    local frame = CreateFrame("CheckButton", name, aDF.Options, "UICheckButtonTemplate")
+    frame:SetFrameStrata("LOW")
+    frame:SetScript("OnClick", function ()
+        if frame:GetChecked() then -- If checked
+            gui_Options[name] = 1
+        else -- If unchecked
+            gui_Options[name] = 0 -- Use 0 instead of nil
+        end
+        aDF:Sort()
+        aDF:Update()
+        end)
+    frame:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
+        GameTooltip:SetText(name, 255, 255, 0, 1, 1);
+        GameTooltip:Show()
+    end)
+    frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Set initial checked state based on whether the value is exactly 1
+    frame:SetChecked(gui_Options[name] == 1)
+    frame.Icon = frame:CreateTexture(nil, 'ARTWORK')
+    frame.Icon:SetTexture(aDFDebuffs[name])
+    frame.Icon:SetWidth(25)
+    frame.Icon:SetHeight(25)
+    frame.Icon:SetPoint("CENTER",-30,0)
+    --DEFAULT_CHAT_FRAME:AddMessage("----- Adding new gui checkbox")
+    return frame
 end
 
 -- update function for the text/debuff frames
@@ -320,79 +317,68 @@ local sundered_at = GetTime()
 local anni_stacks_maxed = false
 
 function aDF:Update()
-	if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
-		if UnitIsUnit(aDF_target,'targettarget') and GetTime() < (last_target_change_time + 1.3) then
-			-- we won't allow updates for a while to allow targettarget to catch up
-			-- adfprint('target changed too soon, delaying update')
-			return
-		end
-		local armorcurr = UnitResistance(aDF_target,0)
---		aDF.armor:SetText(UnitResistance(aDF_target,0).." ["..math.floor(((UnitResistance(aDF_target,0) / (467.5 * UnitLevel("player") + UnitResistance(aDF_target,0) - 22167.5)) * 100),1).."%]")
-		aDF.armor:SetText(armorcurr)
-		-- adfprint(string.format('aDF_target %s targetname %s armorcurr %s armorprev %s', aDF_target, UnitName(aDF_target), armorcurr, aDF_armorprev))
-		if armorcurr > aDF_armorprev then
-			local armordiff = armorcurr - aDF_armorprev
-			local diffreason = ""
-			if aDF_armorprev ~= 0 and aDFArmorVals[armordiff] then
-				diffreason = " (Dropped " .. aDFArmorVals[armordiff] .. ")"
-			end
-			local msg = UnitName(aDF_target).."'s armor: "..aDF_armorprev.." -> "..armorcurr..diffreason
-			-- adfprint(msg)
-			if UnitIsUnit(aDF_target,'target') then
-				-- targettarget does not trigger events when it changes. this means it's hard to tell apart units with the same name, so we don't allow notifications for it
-				-- ^ TODO: this isn't true with superwow, we can tell anything apart we like, what is the correct behavior?
-				aDF:SendChatMessage(msg, gui_chan)
-			end
-
-		end
-		aDF_armorprev = armorcurr
-
-		-- if gui_Options["Resistances"] == 1 then
-		-- if true then
-		if gui_Options.show_resistances then 
-			aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
-		else
-			aDF.res:SetText("")
-		end
-		for i,v in pairs(gui_Options) do
-			if aDF:GetDebuff(aDF_target,aDFSpells[i]) then
-				aDF_frames[i]["icon"]:SetAlpha(1)
-				if aDF:GetDebuff(aDF_target,aDFSpells[i],1) > 1 then
-					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
-				end
-				if i == "Sunder Armor" then
-					local elapsed = 30 - (GetTime() - sundered_at)
-					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
-					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
-				end
-				if i == "Armor Shatter" then
-					local elapsed = 45 - (GetTime() - shattered_at)
-					-- can't know anni duration once stacks are maxxed, bump it if it's still up?
-					if elapsed < 0 then
-						shattered_at = shattered_at + 20
-					end
-					aDF_frames[i]["nr"]:SetText(aDF:GetDebuff(aDF_target,aDFSpells[i],1))
-					aDF_frames[i]["dur"]:SetText(format("%0.f",elapsed >= 0 and elapsed or 0))
-				end
-			else
-				if aDF_frames[i] then
-					aDF_frames[i]["icon"]:SetAlpha(0.3)
-					aDF_frames[i]["nr"]:SetText("")
-					aDF_frames[i]["dur"]:SetText("")
-				end
-			end		
-		end
-	else
-		aDF.armor:SetText("")
-		aDF.res:SetText("")
-		for i,v in pairs(gui_Options) do
-			if aDF_frames[i] then
-				aDF_frames[i]["icon"]:SetAlpha(0.3)
-				aDF_frames[i]["nr"]:SetText("")
-				aDF_frames[i]["dur"]:SetText("")
-			end
-		end
-	end
+    if aDF_target ~= nil and UnitExists(aDF_target) and not UnitIsDead(aDF_target) then
+        if UnitIsUnit(aDF_target,'targettarget') and GetTime() < (last_target_change_time + 1.3) then
+            -- adfprint('target changed too soon, delaying update')
+            return
+        end
+        local armorcurr = UnitResistance(aDF_target,0)
+        aDF.armor:SetText(armorcurr)
+        if armorcurr > aDF_armorprev then
+            local armordiff = armorcurr - aDF_armorprev
+            local diffreason = ""
+            if aDF_armorprev ~= 0 and aDFArmorVals[armordiff] then
+                diffreason = " (Dropped " .. aDFArmorVals[armordiff] .. ")"
+            end
+            local msg = UnitName(aDF_target).."'s armor: "..aDF_armorprev.." -> "..armorcurr..diffreason
+            if UnitIsUnit(aDF_target,'target') then
+                aDF:SendChatMessage(msg, gui_chan)
+            end
+        end
+        aDF_armorprev = armorcurr
+        if gui_Options.show_resistances then
+            aDF.res:SetText("|cffFF0000FR "..UnitResistance(aDF_target,2).." |cff00FF00NR "..UnitResistance(aDF_target,3).." |cff4AE8F5FrR "..UnitResistance(aDF_target,4).." |cff800080SR "..UnitResistance(aDF_target,5))
+        else
+            aDF.res:SetText("")
+        end
+        for i, texture in pairs(aDFDebuffs) do
+            if gui_Options[i] == 1 and aDF_frames[i] then
+                local frame = aDF_frames[i]
+                local stackCount = aDF:GetDebuff(aDF_target, aDFSpells[i], 1)
+                if stackCount then -- Check if the debuff is present (stackCount will be a number >= 0, or false)
+                    frame.icon:SetAlpha(1)
+                    frame.nr:SetText(stackCount > 1 and stackCount or "")
+                    if i == "Sunder Armor" then
+                        local elapsed = 30 - (GetTime() - sundered_at)
+                        frame.dur:SetText(format("%0.f", elapsed >= 0 and elapsed or 0))
+                    elseif i == "Armor Shatter" then
+                        local elapsed = 45 - (GetTime() - shattered_at)
+                        if elapsed < 0 and anni_stacks_maxed == false then
+                            shattered_at = shattered_at + 20
+                        end
+                        frame.dur:SetText(format("%0.f", elapsed >= 0 and elapsed or 0))
+                    else
+                         frame.dur:SetText("") -- Clear duration for others unless specific logic added
+                    end
+                else -- Debuff not present on target
+                    frame.icon:SetAlpha(0.3)
+                    frame.nr:SetText("")
+                    frame.dur:SetText("")
+                end
+            end
+        end
+    else -- No valid target
+        aDF.armor:SetText("")
+        aDF.res:SetText("")
+        -- Clear text/alpha on all potentially visible frames if no target
+        for i, frame in pairs(aDF_frames) do
+             if gui_Options[i] == 1 then -- Only clear frames that *should* be visible
+                frame.icon:SetAlpha(0.3)
+                frame.nr:SetText("")
+                frame.dur:SetText("")
+             end
+        end
+    end
 end
 
 function aDF:UpdateCheck()
@@ -406,31 +392,48 @@ end
 -- Sort function to show/hide frames aswell as positioning them correctly
 
 function aDF:Sort()
-	for name,_ in pairs(aDFDebuffs) do
-		if gui_Options[name] == nil then
-			aDF_frames[name]:Hide()
-		else
-			aDF_frames[name]:Show()
-		end
-	end
-	local aDFTempTable = {}
-	for dbf,_ in pairs(gui_Options) do
-		table.insert(aDFTempTable,dbf)
-	end
-	table.sort(aDFTempTable, function(a,b) return a<b end)
-	for n, v in pairs(aDFTempTable) do
-	--DEFAULT_CHAT_FRAME:AddMessage("Name: "..v)
-		if v and aDF_frames[v] then
-			if n > 7 then
-				y_=-((24+gui_Optionsxy)*2)
-				x_=(n-1)-7
-				aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*x_,y_)
-			else
-				y_=-(24+gui_Optionsxy)
-				aDF_frames[v]:SetPoint('BOTTOMLEFT',(24+gui_Optionsxy)*(n-1),y_)
-			end
-		end
-	end
+    -- Show/Hide frames based on options
+    for name,_ in pairs(aDFDebuffs) do
+        if aDF_frames[name] then -- Make sure frame exists
+            if gui_Options[name] ~= 1 then -- Hide if option is not 1 (covers 0 and nil)
+                aDF_frames[name]:Hide()
+            else -- Show if option is 1
+                aDF_frames[name]:Show()
+            end
+        end
+    end
+
+    -- Build table of enabled options for positioning
+    local aDFTempTable = {}
+    for dbf, state in pairs(gui_Options) do
+        -- Only add to the sortable list if the option is enabled (1)
+        -- And ensure it's a debuff that should have a frame
+        if state == 1 and aDFDebuffs[dbf] then
+            table.insert(aDFTempTable, dbf)
+        end
+    end
+    table.sort(aDFTempTable, function(a,b) return a<b end) -- Sort alphabetically
+
+    -- Position the enabled frames
+    local aDFsize = 24 + gui_Optionsxy
+    local items_per_row = 7 -- Assuming 7 frames fit per row based on original width calculation attempt
+
+    for n, v in ipairs(aDFTempTable) do -- Iterate sorted list with numerical index
+        if v and aDF_frames[v] then
+            local frame = aDF_frames[v]
+            -- Calculate row and column (0-indexed)
+            local row = math.floor((n - 1) / items_per_row)
+            -- Calculate column using floor division and subtraction (equivalent to modulo)
+            local col = (n - 1) - (math.floor((n - 1) / items_per_row) * items_per_row) -- Replaced % calculation
+
+            -- Calculate X and Y position based on row/column
+            local y_ = -(aDFsize * (row + 1))
+            local x_ = aDFsize * col
+
+            frame:ClearAllPoints() -- Important to clear old points before setting new ones
+            frame:SetPoint('BOTTOMLEFT', x_, y_)
+        end
+    end
 end
 
 -- Options frame
@@ -633,15 +636,20 @@ end
 -- event function, will load the frames we need
 function aDF:OnEvent()
 	if event == "ADDON_LOADED" and arg1 == "aDF" then
+        aDF_x = aDF_x or 0
+        aDF_y = aDF_y or 0
+        gui_Options = gui_Options or {}
+        gui_chan = gui_chan or "None"
+        gui_Optionsxy = gui_Optionsxy or 1
 		aDF_Default()
 
-		if gui_Options.showResistances == nil then 
-			gui_Options.showResistances = true -- Default to ON
+		if gui_Options.show_resistances == nil then 
+			gui_Options.show_resistances = true -- Default to ON
 		end
 
 		aDF_target = nil
 		aDF_armorprev = 30000
-		if gui_chan == nil then gui_chan = Say end
+		-- if gui_chan == nil then gui_chan = Say end
 		aDF:Init() -- loads frame, see the function
 		aDF.Options:Gui() -- loads options frame
 		aDF:Sort() -- sorts the debuff frames and places them to eachother

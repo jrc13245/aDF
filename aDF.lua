@@ -4,7 +4,7 @@
 local has_superwow = SetAutoloot and true or false
 aDF = CreateFrame('Button', "aDF", UIParent); -- Event Frame
 aDF.Options = CreateFrame("Frame",nil,UIParent) -- Options frame
-
+local string = string
 --register events 
 aDF:RegisterEvent("ADDON_LOADED")
 aDF:RegisterEvent("UNIT_AURA")

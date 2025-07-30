@@ -729,10 +729,18 @@ aDF:SetScript("OnUpdate", aDF.UpdateCheck)
 -- slash commands
 
 function aDF.slash(input)
-    local trimmed_input = input and string.match(input, "^%s*(.-)%s*$") or ""
-    local cmd, value = string.match(trimmed_input, "^(%S+)%s*(%S*)%s*$")
-    cmd = cmd or "" 
+    -- Ensure input is a string and trim whitespace
+    local s = input or ""
+    s = string.gsub(s, "^%s*(.-)%s*$", "%1")
+
+    local cmd, value = string.match(s, "^(%S+)%s*(.*)$")
+
+    -- If input was empty, string.match returns nil. Default them to empty strings.
+    cmd = cmd or ""
+    value = value or ""
+
     local lower_cmd = string.lower(cmd)
+    local lower_value = string.lower(value)
 
     if lower_cmd == "" then
         DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r type |cFFFFFF00 /adf show|r to show frame",1,1,1)
@@ -746,8 +754,7 @@ function aDF.slash(input)
     elseif lower_cmd == "options" then
         aDF.Options:Show()
     elseif lower_cmd == "resist" then
-        local lower_value = string.lower(tostring(value))
-        if lower_value =="on" then
+        if lower_value == "on" then
             gui_Options.show_resistances = true
             DEFAULT_CHAT_FRAME:AddMessage("|cFFF5F54A aDF:|r Resistances |cFF00FF00ON",1,1,1)
             aDF:Update()
